@@ -1,9 +1,13 @@
 name: Build Kernel
 
 on:
-  push:
+  workflow_dispatch:
 
     inputs:
+      KERNEL_SOURCE:
+        description: 'Kernel Source'
+        required: true
+        default: 'almostdead1/Rockstarkernel_beryllium'
       KERNEL_SOURCE_BRANCH:
         description: 'Branch'
         required: true
@@ -44,6 +48,8 @@ on:
         default: 'false'
         type: boolean
 
+   push:
+      branches: master
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,6 +59,7 @@ jobs:
 
     - name: Setup Configuration
       run: |
+        echo "KERNEL_SOURCE=${{ github.event.inputs.KERNEL_SOURCE }}" >> $GITHUB_ENV
         echo "KERNEL_SOURCE_BRANCH=${{ github.event.inputs.KERNEL_SOURCE_BRANCH }}" >> $GITHUB_ENV
         echo "KERNEL_DEFCONFIG=${{ github.event.inputs.KERNEL_DEFCONFIG }}" >> $GITHUB_ENV
         echo "TARGET_ARCH=${{ github.event.inputs.TARGET_ARCH }}" >> $GITHUB_ENV
@@ -73,19 +80,22 @@ jobs:
     - name: Download Clang Toolchain
       run: |
         mkdir clang
-        wget -q https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230217-release/Clang-17.0.0-20230217.tar.gz -O clang.tar.gz
+        wget -q ${{ env.CLANG_URL }} -O clang.tar.gz
         tar -C clang/ -zxf clang.tar.gz
 
     - name: Checkout Kernel Source
       uses: actions/checkout@v3
       with:
+        github-server-url: 'https://github.com'
+        repository: ${{ env.KERNEL_SOURCE }}
         ref: ${{ env.KERNEL_SOURCE_BRANCH }}
         submodules: recursive
-        path: Rockstarkernel_beryllium
+        path: android-kernel
 
     - name: Setup KernelSU
       if: env.USE_KERNELSU == 'true'
       run: |
+        cd android-kernel
         if [ ${{ env.USE_KPROBES }} = true ] ; then
             echo "CONFIG_MODULES=y" >> arch/${{ env.TARGET_ARCH }}/configs/${{ env.KERNEL_DEFCONFIG }}
             echo "CONFIG_KPROBES=y" >> arch/${{ env.TARGET_ARCH }}/configs/${{ env.KERNEL_DEFCONFIG }}
@@ -105,6 +115,7 @@ jobs:
 
     - name: Generate kernel configuration
       run: |
+        cd android-kernel
         export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
         export ARCH=${{ env.TARGET_ARCH }}
         export SUBARCH=${{ env.TARGET_ARCH }}
@@ -119,6 +130,7 @@ jobs:
 
     - name: Build kernel
       run: |
+        cd android-kernel
         export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
         export ARCH=${{ env.TARGET_ARCH }}
         export SUBARCH=${{ env.TARGET_ARCH }}
@@ -131,12 +143,12 @@ jobs:
 
     - name: Check the kernel output files
       run: |
-       if [ -f Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }} ] ; then
+       if [ -f android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }} ] ; then
            echo "CHECK_KERNEL_FILE_IS_OK=true" >> $GITHUB_ENV
        else
            echo "Kernel output file is empty"
        fi
-       if [ -f Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img ] ; then
+       if [ -f android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img ] ; then
            echo "CHECK_DTBO_IS_OK=true" >> $GITHUB_ENV
        else
            echo "DTBO image is empty"
@@ -147,14 +159,14 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ env.KERNEL_FILE }}${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }}
+        path: android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }}
 
     - name: Upload DTBO image
       if: env.CHECK_DTBO_IS_OK == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: dtbo-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img
+        path: android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img
 
     - name: Checkout osm0sis/AnyKernel3
       uses: actions/checkout@v3
@@ -170,14 +182,14 @@ jobs:
         sed -i 's!block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!block=auto;!g' anykernel.sh
         sed -i 's/is_slot_device=0;/is_slot_device=auto;/g' anykernel.sh
         if [ ${{ env.CHECK_KERNEL_FILE_IS_OK }} = true ] ; then
-            cp -fp ../Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }} ./
+            cp -fp ../android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/${{ env.KERNEL_FILE }} ./
         fi
         if [ ${{ env.CHECK_DTBO_IS_OK }} = true ] ; then
-            cp -fp ../Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img ./
+            cp -fp ../android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/dtbo.img ./
         fi
-        cp -fp ../Rockstarkernel_beryllium/out/arch/${{ env.TARGET_ARCH }}/boot/dtb ./
-        cp -fp ../Rockstarkernel_beryllium/out/.config ./
-        cp -fp ../Rockstarkernel_beryllium/out/defconfig ./
+        cp -fp ../android-kernel/out/arch/${{ env.TARGET_ARCH }}/boot/dtb ./
+        cp -fp ../android-kernel/out/.config ./
+        cp -fp ../android-kernel/out/defconfig ./
         rm -rf .git* modules patch ramdisk
 
     - name: Upload AnyKernel3
