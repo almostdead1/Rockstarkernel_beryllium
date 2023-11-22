@@ -1,4 +1,4 @@
-name: Build on push master
+name: Build Kernel
 
 on:
   push:
@@ -11,16 +11,11 @@ jobs:
     - name: Checkout kernel source
       uses: actions/checkout@v2
 
-
-   steps:
     - name: Enter folder
       run: cd Rockstarkernel_beryllium
 
-
-    steps:
     - name: KernelSU
       run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
-
 
     - name: Checkout zipper
       uses: actions/checkout@v2
@@ -32,11 +27,11 @@ jobs:
       uses: lemniskett/android-kernel-actions@master
       id: build
       env:
-        NAME: Dark-Ages-Último
+        NAME: Perf
       with:
         arch: arm64
         compiler: gcc/10
-        defconfig: vince_defconfig
+        defconfig: perf_defconfig
         image: Image.gz-dtb
 
     - name: Release build
