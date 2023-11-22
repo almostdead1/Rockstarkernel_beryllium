@@ -78,7 +78,7 @@ jobs:
     - name: Download Clang Toolchain
       run: |
         mkdir clang
-        wget ${{ env.CLANG_URL }} -O clang.tar.gz
+        wget -q https://github.com/ZyCromerZ/Clang/releases/download/17.0.0-20230217-release/Clang-17.0.0-20230217.tar.gz -O clang.tar.gz
         tar -C clang/ -zxf clang.tar.gz
 
     - name: Checkout Kernel Source
