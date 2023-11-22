@@ -31,7 +31,7 @@ jobs:
       with:
         arch: arm64
         compiler: gcc/10
-        defconfig: perf_defconfig
+        defconfig: beryllium_defconfig
         image: Image.gz-dtb
 
     - name: Release build
