@@ -12,13 +12,16 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Remove KernelSU
-      run: rm -rf KernelSU
+      run: rm -rf /github/workspace/KernelSU
 
     - name: Remove kernelsu symlink
-      run: rm drivers/kernelsu
+      run: rm /github/workspace/drivers/kernelsu
 
     - name: KernelSU
       run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+
+    - name: KernelSU global --add safe.directory
+      run: git config --global --add safe.directory /github/workspace/KernelSU 
 
     - name: Checkout zipper
       uses: actions/checkout@v2
