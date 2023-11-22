@@ -11,8 +11,8 @@ jobs:
     - name: Checkout kernel source
       uses: actions/checkout@v2
 
-    - name: Enter folder
-      run: cd Rockstarkernel_beryllium
+#    - name: Enter folder
+#     run: cd Rockstarkernel_beryllium
 
     - name: KernelSU
       run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
