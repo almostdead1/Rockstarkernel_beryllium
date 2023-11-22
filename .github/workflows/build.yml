@@ -11,7 +11,7 @@ on:
       KERNEL_SOURCE_BRANCH:
         description: 'Branch'
         required: true
-        default: 'work'
+        default: 'master'
       KERNEL_DEFCONFIG:
         description: 'Defconfig'
         required: true
@@ -88,7 +88,7 @@ jobs:
         repository: ${{ env.KERNEL_SOURCE }}
         ref: ${{ env.KERNEL_SOURCE_BRANCH }}
         submodules: recursive
-        path: Rockstarkernel_beryllium
+        path: 
 
     - name: Setup KernelSU
       if: env.USE_KERNELSU == 'true'
