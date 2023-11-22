@@ -14,8 +14,8 @@ jobs:
     - name: Remove KernelSU
       run: rm -rf /github/workspace/KernelSU
 
-    - name: Remove kernelsu symlink
-      run: rm /github/workspace/drivers/kernelsu
+#    - name: Remove kernelsu symlink
+#      run: rm /github/workspace/drivers/kernelsu
 
     - name: KernelSU
       run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
