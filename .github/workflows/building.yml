@@ -17,9 +17,7 @@ jobs:
     - name: Remove old kernelsu symlink
       run: rm drivers/kernelsu
 
-    - name: KernelSU global --add safe.directory
-      run: git config --global --add safe.directory /github/workspace/KernelSU 
-
+  
       # Download the setup.sh script and execute it using the Bash shell.
       - name: Download and execute setup.sh
         env:
