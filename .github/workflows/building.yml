@@ -12,19 +12,16 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Remove old KernelSU
-      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium
-     run: rm -rf KernelSU
-
+      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium && rm -rf KernelSU
+      
     - name: Remove old kernelsu symlink
-      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/drivers
-    run: rm kernelsu
+      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/drivers && rm kernelsu
 
     - name: KernelSU global --add safe.directory
       run: git config --global --add safe.directory /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/KernelSU 
 
     - name: Adding latest KernelSU
-      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium
-           curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium && curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
     - name: Checkout zipper
       uses: actions/checkout@v3
