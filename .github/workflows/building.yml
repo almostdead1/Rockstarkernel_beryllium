@@ -13,11 +13,11 @@ jobs:
 
     - name: Remove old KernelSU
       run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium
-      rm -rf KernelSU
+     run: rm -rf KernelSU
 
     - name: Remove old kernelsu symlink
       run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/drivers
-      rm kernelsu
+    run: rm kernelsu
 
     - name: KernelSU global --add safe.directory
       run: git config --global --add safe.directory /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/KernelSU 
