@@ -17,16 +17,13 @@ jobs:
     - name: Remove old kernelsu symlink
       run: rm drivers/kernelsu
 
-  
-      # Download the setup.sh script and execute it using the Bash shell.
-      - name: Download and execute setup.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: KernelSU global --add safe.directory
+      run: git config --global --add safe.directory /github/workspace/KernelSU 
 
-        run: |
-          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+    - name: Adding latest KernelSU
+      run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
-   - name: Checkout zipper
+    - name: Checkout zipper
       uses: actions/checkout@v3
       with:
         repository: almostdead1/AnyKernel3
