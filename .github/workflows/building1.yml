@@ -21,7 +21,7 @@ jobs:
       run: git config --global --add safe.directory /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium/KernelSU 
 
     - name: Adding latest KernelSU
-      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium && curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+      run: cd /home/runner/work/Rockstarkernel_beryllium/Rockstarkernel_beryllium && curl -LSs "https://raw.githubusercontent.com/almostdead1/KernelSU/main/kernel/setup.sh" | bash -
 
     - name: Checkout zipper
       uses: actions/checkout@v3
