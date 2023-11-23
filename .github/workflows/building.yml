@@ -20,8 +20,8 @@ jobs:
     - name: KernelSU global --add safe.directory
       run: git config --global --add safe.directory /github/workspace/KernelSU 
       
-  - name: Download and execute setup.sh
-    run: |
+    - name: Download and execute setup.sh
+       run: |
       curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
   #  - name: Adding latest KernelSU
