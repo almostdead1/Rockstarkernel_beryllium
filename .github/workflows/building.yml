@@ -21,7 +21,7 @@ jobs:
       run: git config --global --add safe.directory /github/workspace/KernelSU 
 
     - name: Adding latest KernelSU
-      run: curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
+      run: curl -LSs "https://raw.githubusercontent.com/almostdead1/KernelSU/main/kernel/setup.sh" | bash -
 
     - name: Checkout zipper
       uses: actions/checkout@v3
