@@ -56,16 +56,17 @@ int openChannel(void *clt)
 	client = clt;
 #ifdef I2C_INTERFACE
 	I2CSAD = ((struct i2c_client *)clt)->addr;
-	pr_info("openChannel: SAD: %02X\n", I2CSAD);
+	logError(0, "%s openChannel: SAD: %02X \n", tag, I2CSAD);
 #else
-	pr_info("%s: spi_master: flags = %04X !\n", __func__,
+	logError(1, "%s %s: spi_master: flags = %04X !\n", tag, __func__,
 		 ((struct spi_device *)client)->master->flags);
-	pr_info("%s: spi_device: max_speed = %d chip select = %02X bits_per_words = %d mode = %04X !\n",
-		__func__, ((struct spi_device *)client)->max_speed_hz,
-		((struct spi_device *)client)->chip_select,
-		((struct spi_device *)client)->bits_per_word,
-		((struct spi_device *)client)->mode);
-	pr_info("openChannel: completed!\n");
+	logError(1,
+		 "%s %s: spi_device: max_speed = %d chip select = %02X bits_per_words = %d mode = %04X !\n",
+		 tag, __func__, ((struct spi_device *)client)->max_speed_hz,
+		 ((struct spi_device *)client)->chip_select,
+		 ((struct spi_device *)client)->bits_per_word,
+		 ((struct spi_device *)client)->mode);
+	logError(1, "%s openChannel: completed! \n", tag);
 #endif
 	return OK;
 }
@@ -169,7 +170,7 @@ int fts_read(u8 *outBuf, int byteToRead)
 			mdelay(I2C_WAIT_BEFORE_RETRY);
 	}
 	if (ret < 0) {
-		pr_err("%s: ERROR %08X\n", __func__, ERROR_BUS_R);
+		logError(1, "%s %s: ERROR %08X\n", tag, __func__, ERROR_BUS_R);
 		return ERROR_BUS_R;
 	}
 	return OK;
@@ -236,7 +237,7 @@ int fts_writeRead(u8 *cmd, int cmdLength, u8 *outBuf, int byteToRead)
 			mdelay(I2C_WAIT_BEFORE_RETRY);
 	}
 	if (ret < 0) {
-		pr_err("%s: ERROR %08X\n", __func__, ERROR_BUS_WR);
+		logError(1, "%s %s: ERROR %08X\n", tag, __func__, ERROR_BUS_WR);
 		return ERROR_BUS_WR;
 	}
 	return OK;
@@ -287,7 +288,7 @@ int fts_write(u8 *cmd, int cmdLength)
 			mdelay(I2C_WAIT_BEFORE_RETRY);
 	}
 	if (ret < 0) {
-		pr_err("%s: ERROR %08X\n", __func__, ERROR_BUS_W);
+		logError(1, "%s %s: ERROR %08X\n", tag, __func__, ERROR_BUS_W);
 		return ERROR_BUS_W;
 	}
 	return OK;
@@ -313,7 +314,7 @@ int fts_read_dma_safe(u8 *outBuf, int byteToRead)
 		if (unlikely(byteToRead > PAGE_SIZE)) {
 			tmpBuf = kzalloc(byteToRead, GFP_KERNEL);
 			if (!tmpBuf) {
-				pr_err("%s: ERROR alloc mem failed!", __func__);
+				logError(1, "%s %s:ERROR alloc mem failed!", tag, __func__);
 				mutex_unlock(&dma->dmaBufLock);
 				return ERROR_ALLOC;
 			}
@@ -350,7 +351,7 @@ int fts_writeRead_dma_safe(u8 *cmd, int cmdLength, u8 *outBuf, int byteToRead)
 		if (unlikely(cmdLength > PAGE_SIZE)) {
 			tmpWrBuf = kzalloc(cmdLength, GFP_KERNEL);
 			if (!tmpWrBuf) {
-				pr_err("%s: ERROR alloc mem failed!", __func__);
+				logError(1, "%s %s:ERROR alloc mem failed!", tag, __func__);
 				mutex_unlock(&dma->dmaBufLock);
 				return ERROR_ALLOC;
 			}
@@ -367,7 +368,7 @@ int fts_writeRead_dma_safe(u8 *cmd, int cmdLength, u8 *outBuf, int byteToRead)
 		if (unlikely(byteToRead > PAGE_SIZE)) {
 			tmpRdBuf = kzalloc(byteToRead, GFP_KERNEL);
 			if (!tmpRdBuf) {
-				pr_err("%s: ERROR alloc mem failed!", __func__);
+				logError(1, "%s %s:ERROR alloc mem failed!", tag, __func__);
 				if (tmpWrBuf)
 					kfree(tmpWrBuf);
 				mutex_unlock(&dma->dmaBufLock);
@@ -409,7 +410,7 @@ int fts_write_dma_safe(u8 *cmd, int cmdLength)
 		if (unlikely(cmdLength > PAGE_SIZE)) {
 			tmpBuf = kzalloc(cmdLength, GFP_KERNEL);
 			if (!tmpBuf) {
-				pr_err("%s: ERROR alloc mem failed!", __func__);
+				logError(1, "%s %s:ERROR alloc mem failed!", tag, __func__);
 				mutex_unlock(&dma->dmaBufLock);
 				return ERROR_ALLOC;
 			}
@@ -494,11 +495,13 @@ int fts_writeFwCmd(u8 *cmd, int cmdLength)
 			mdelay(I2C_WAIT_BEFORE_RETRY);
 	}
 	if (ret < 0) {
-		pr_err("fts_writeFwCmd: ERROR %08X\n", ERROR_BUS_W);
+		logError(1, "%s fts_writeFwCmd: ERROR %08X\n", tag,
+			 ERROR_BUS_W);
 		return ERROR_BUS_W;
 	}
 	if (ret2 < OK) {
-		pr_err("fts_writeFwCmd: check echo ERROR %08X\n", ret2);
+		logError(1, "%s fts_writeFwCmd: check echo ERROR %08X\n", tag,
+			 ret2);
 		return ret2;
 	}
 	return OK;
@@ -575,7 +578,7 @@ int fts_writeThenWriteRead(u8 *writeCmd1, int writeCmdLength, u8 *readCmd1,
 	}
 
 	if (ret < 0) {
-		pr_err("%s: ERROR %08X\n", __func__, ERROR_BUS_WR);
+		logError(1, "%s %s: ERROR %08X\n", tag, __func__, ERROR_BUS_WR);
 		return ERROR_BUS_WR;
 	}
 	return OK;
@@ -612,19 +615,20 @@ int fts_writeU8UX(u8 cmd, AddrSize addrSize, u64 address, u8 *data,
 			}
 
 			finalCmd[0] = cmd;
-			pr_debug("%s: addrSize = %d\n", __func__, addrSize);
+			logError(0, "%s %s: addrSize = %d \n", tag, __func__,
+				 addrSize);
 			for (i = 0; i < addrSize; i++) {
 				finalCmd[i + 1] =
 				    (u8) ((address >> ((addrSize - 1 - i) * 8))
 					  & 0xFF);
-				pr_debug("%s: cmd[%d] = %02X\n",
+				logError(1, "%s %s: cmd[%d] = %02X \n", tag,
 					 __func__, i + 1, finalCmd[i + 1]);
 			}
 
 			memcpy(&finalCmd[addrSize + 1], data, toWrite);
 
 			if (fts_write(finalCmd, 1 + addrSize + toWrite) < OK) {
-				pr_err(" %s: ERROR %08X\n",
+				logError(1, "%s %s: ERROR %08X \n", tag,
 					 __func__, ERROR_BUS_W);
 				return ERROR_BUS_W;
 			}
@@ -634,8 +638,9 @@ int fts_writeU8UX(u8 cmd, AddrSize addrSize, u64 address, u8 *data,
 			data += toWrite;
 		}
 	} else {
-		pr_err("%s: address size bigger than max allowed %lu... ERROR %08X\n",
-			__func__, sizeof(u64), ERROR_OP_NOT_ALLOW);
+		logError(1,
+			 "%s %s: address size bigger than max allowed %d... ERROR %08X \n",
+			 tag, __func__, sizeof(u64), ERROR_OP_NOT_ALLOW);
 	}
 
 	return OK;
@@ -677,16 +682,18 @@ int fts_writeReadU8UX(u8 cmd, AddrSize addrSize, u64 address, u8 *outBuf,
 		if (hasDummyByte == 1) {
 			if (fts_writeRead
 			    (finalCmd, 1 + addrSize, buff, toRead + 1) < OK) {
-				pr_err("%s: read error... ERROR %08X\n",
-					__func__, ERROR_BUS_WR);
+				logError(1,
+					 "%s %s: read error... ERROR %08X \n",
+					 tag, __func__, ERROR_BUS_WR);
 				return ERROR_BUS_WR;
 			}
 			memcpy(outBuf, buff + 1, toRead);
 		} else {
 			if (fts_writeRead(finalCmd, 1 + addrSize, buff, toRead)
 			    < OK) {
-				pr_err("%s: read error... ERROR %08X\n",
-					__func__, ERROR_BUS_WR);
+				logError(1,
+					 "%s %s: read error... ERROR %08X \n",
+					 tag, __func__, ERROR_BUS_WR);
 				return ERROR_BUS_WR;
 			}
 			memcpy(outBuf, buff, toRead);
@@ -749,14 +756,15 @@ int fts_writeU8UXthenWriteU8UX(u8 cmd1, AddrSize addrSize1, u8 cmd2,
 		memcpy(&finalCmd2[addrSize2 + 1], data, toWrite);
 
 		if (fts_write(finalCmd1, 1 + addrSize1) < OK) {
-			pr_err("%s: first write error... ERROR %08X\n",
-				__func__, ERROR_BUS_W);
+			logError(1, "%s %s: first write error... ERROR %08X \n",
+				 tag, __func__, ERROR_BUS_W);
 			return ERROR_BUS_W;
 		}
 
 		if (fts_write(finalCmd2, 1 + addrSize2 + toWrite) < OK) {
-			pr_err("%s: second write error... ERROR %08X\n",
-				__func__, ERROR_BUS_W);
+			logError(1,
+				 "%s %s: second write error... ERROR %08X \n",
+				 tag, __func__, ERROR_BUS_W);
 			return ERROR_BUS_W;
 		}
 
@@ -816,24 +824,26 @@ int fts_writeU8UXthenWriteReadU8UX(u8 cmd1, AddrSize addrSize1, u8 cmd2,
 		}
 
 		if (fts_write(finalCmd1, 1 + addrSize1) < OK) {
-			pr_err("%s: first write error... ERROR %08X\n",
-				__func__, ERROR_BUS_W);
+			logError(1, "%s %s: first write error... ERROR %08X \n",
+				 tag, __func__, ERROR_BUS_W);
 			return ERROR_BUS_W;
 		}
 
 		if (hasDummyByte == 1) {
 			if (fts_writeRead
 			    (finalCmd2, 1 + addrSize2, buff, toRead + 1) < OK) {
-				pr_err("%s: read error... ERROR %08X\n",
-					__func__, ERROR_BUS_WR);
+				logError(1,
+					 "%s %s: read error... ERROR %08X \n",
+					 tag, __func__, ERROR_BUS_WR);
 				return ERROR_BUS_WR;
 			}
 			memcpy(outBuf, buff + 1, toRead);
 		} else {
 			if (fts_writeRead
 			    (finalCmd2, 1 + addrSize2, buff, toRead) < OK) {
-				pr_err("%s: read error... ERROR %08X\n",
-					__func__, ERROR_BUS_WR);
+				logError(1,
+					 "%s %s: read error... ERROR %08X \n",
+					 tag, __func__, ERROR_BUS_WR);
 				return ERROR_BUS_WR;
 			}
 			memcpy(outBuf, buff, toRead);

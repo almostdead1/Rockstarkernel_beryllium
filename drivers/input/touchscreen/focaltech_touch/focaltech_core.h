@@ -204,6 +204,12 @@ struct fts_ts_data {
 	struct proc_dir_entry *tp_data_dump_proc;
 	struct proc_dir_entry *tp_fw_version_proc;
 	struct proc_dir_entry *tp_lockdown_info_proc;
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	bool palm_sensor_switch;
+	bool palm_sensor_changed;
+	struct class *tp_class;
+	bool gamemode_enabled;
+#endif
 
 };
 
@@ -217,15 +223,6 @@ struct fts_mode_switch {
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 extern struct fts_ts_data *fts_data;
-
-/* i2c communication*/
-int fts_i2c_write_reg(struct i2c_client *client, u8 regaddr, u8 regvalue);
-int fts_i2c_read_reg(struct i2c_client *client, u8 regaddr, u8 *regvalue);
-int fts_i2c_read(struct i2c_client *client, char *writebuf, int writelen, char *readbuf, int readlen);
-int fts_i2c_write(struct i2c_client *client, char *writebuf, int writelen);
-void fts_i2c_hid2std(struct i2c_client *client);
-int fts_i2c_init(void);
-int fts_i2c_exit(void);
 
 /* Gesture functions */
 #if FTS_GESTURE_EN
@@ -260,6 +257,12 @@ int fts_esdcheck_suspend(void);
 int fts_esdcheck_resume(void);
 #endif
 
+/* Production test */
+#if FTS_TEST_EN
+int fts_test_init(struct i2c_client *client);
+int fts_test_exit(struct i2c_client *client);
+#endif
+
 /* Point Report Check*/
 #if FTS_POINT_REPORT_CHECK_EN
 int fts_point_report_check_init(struct fts_ts_data *ts_data);
@@ -286,5 +289,7 @@ void fts_irq_enable(void);
 int fts_flash_read(struct i2c_client *client, u32 addr, u8 *buf, u32 len);
 int fts_flash_read_buf(struct i2c_client *client, u32 saddr, u8 *buf, u32 len);
 void fts_gesture_enable(bool enable);
+
+#include "focaltech_i2c.c"
 
 #endif /* __LINUX_FOCALTECH_CORE_H__ */

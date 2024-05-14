@@ -129,6 +129,12 @@
 #define FTS_ESDCHECK_EN                         0
 
 /*
+ * Production test enable
+ * 1: enable, 0:disable(default)
+ */
+#define FTS_TEST_EN                             1
+
+/*
  * Glove mode enable
  * 1: enable, 0:disable(default)
  */
@@ -203,7 +209,6 @@
  * NOTE: if FTS_GET_VENDOR_ID_NUM > 1, it's the fw corresponding with FTS_VENDOR_ID
  */
 #define FTS_UPGRADE_FW_FILE_E10                      "include/firmware/fw_ft8719_e10.i"
-#define FTS_UPGRADE_FW_FILE_E5                      "include/firmware/fw_ft3518_e5.i"
 
 /*
  * if FTS_GET_VENDOR_ID_NUM >= 2, fw corrsponding with FTS_VENDOR_ID2
