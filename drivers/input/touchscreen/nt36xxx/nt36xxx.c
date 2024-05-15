@@ -2273,7 +2273,8 @@ static int init_nvt_proc(void)
 	}
 #endif
 
-
+	return ret;
+}
 
 
 //late_initcall(nvt_driver_init);
