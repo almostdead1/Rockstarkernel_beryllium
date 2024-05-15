@@ -1442,7 +1442,7 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 
 	pr_err("%s: driver_path=%s\n", __func__, driver_path);
 
-	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);
+/*	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);*/
 
 	if (!ts->input_proc) {
 		ret = -ENOMEM;
