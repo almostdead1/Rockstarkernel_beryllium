@@ -159,7 +159,7 @@ struct nvt_ts_data {
 	struct mutex xbuf_lock;
 	bool irq_enabled;
 
-	int gesture_enable;
+	int gesture_enabled;
 	int glove_enabled;
 	int charger_enabled;
 	int stylus_enabled;

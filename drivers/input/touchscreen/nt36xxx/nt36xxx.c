@@ -1007,7 +1007,7 @@ static void mi_switch_mode_work(struct work_struct *work)
 
 	if (value >= EVENT_WAKEUP_MODE_OFF &&
 		value <= EVENT_WAKEUP_MODE_ON)
-		data->gesture_enable = value - EVENT_WAKEUP_MODE_OFF;
+		data->gesture_enabled = value - EVENT_WAKEUP_MODE_OFF;
 	else
 		NVT_ERR("Does not support touch mode %d\n", value);
 
@@ -1053,7 +1053,6 @@ static int mi_input_event(struct input_dev *dev, unsigned int type, unsigned int
 	return 0;
 }
 #endif
-
 
 #define POINT_DATA_LEN 65
 /*******************************************************
@@ -1393,22 +1392,24 @@ static ssize_t nvt_panel_display_show(struct device *dev,
 static ssize_t nvt_panel_gesture_enable_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
-        const char c = ts->gesture_enable ? '1' : '0';
+        const char c = ts->gesture_enabled ? '1' : '0';
         return sprintf(buf, "%c\n", c);
 }
 
 static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 				     struct device_attribute *attr, const char *buf, size_t count)
 {
-	int i;
+/*	int i;
 
 	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
-		ts->gesture_enable = i;
+		ts->gesture_enabled = i;
 		return count;
 	} else {
 		dev_dbg(dev, "enable_dt2w write error\n");
 		return -EINVAL;
-	}
+	}*/
+    ts->gesture_enabled = 1; // Always set to 1 (enable)
+    return count;
 }
 
 static DEVICE_ATTR(panel_vendor, (S_IRUGO), nvt_panel_vendor_show, NULL);
@@ -2007,7 +2008,7 @@ static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long 
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
 				irq_set_affinity(ts->client->irq, cpumask_of(0));
 #if WAKEUP_GESTURE
-				if (ts->gesture_enable) {
+				if (ts->gesture_enabled) {
 					nvt_enable_reg(ts, true);
 					drm_panel_reset_skip_enable(true);
 				}
@@ -2019,7 +2020,7 @@ static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long 
 				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
 				irq_set_affinity(ts->client->irq, cpu_perf_mask);
 #if WAKEUP_GESTURE
-				if (ts->gesture_enable) {
+				if (ts->gesture_enabled) {
 					drm_panel_reset_skip_enable(false);
 					nvt_enable_reg(ts, false);
 				}
