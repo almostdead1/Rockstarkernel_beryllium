@@ -1399,7 +1399,7 @@ static ssize_t nvt_panel_gesture_enable_show(struct device *dev,
 static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 				     struct device_attribute *attr, const char *buf, size_t count)
 {
-/*	int i;
+	int i;
 
 	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
 		ts->gesture_enabled = i;
@@ -1407,9 +1407,7 @@ static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 	} else {
 		dev_dbg(dev, "enable_dt2w write error\n");
 		return -EINVAL;
-	}*/
-    ts->gesture_enable = 1; // Always set to 1 (enable)
-    return count;
+	}
 }
 
 static DEVICE_ATTR(panel_vendor, (S_IRUGO), nvt_panel_vendor_show, NULL);
