@@ -1185,7 +1185,7 @@ static const struct file_operations gesture_switch_proc_fops = {
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
-
+#endif
 
 static int init_nvt_proc(void)
 {
