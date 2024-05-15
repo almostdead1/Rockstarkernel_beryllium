@@ -47,6 +47,7 @@ static const struct file_operations gesture_enable_ops = {
 
 static int __init touchpanel_init(void) {
   struct proc_dir_entry *gesture_enable;
+  int ret;
 
   proc_dir = proc_mkdir(PROC_DIRNAME, NULL);
   if (!proc_dir) {
@@ -61,7 +62,7 @@ static int __init touchpanel_init(void) {
   }
 
   // Write "0x80, 0x0" to the gesture_enable file on creation
-  ret = kernel_write(gesture_enable->data, buffer_start(gesture_enable->inode),
+  ret = kernel_write(gesture_enable->data, file_inode(gesture_enable)->i_mapping->a_ops->seq_start(gesture_enable),
                      "0x80, 0x0", sizeof("0x80, 0x0"));
   if (ret != sizeof("0x80, 0x0")) {
     remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
