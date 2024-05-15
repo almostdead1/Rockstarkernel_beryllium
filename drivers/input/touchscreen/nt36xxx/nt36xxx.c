@@ -60,347 +60,6 @@ static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long 
 
 /*#define PROC_SYMLINK_PATH "touchpanel"*/
 
-#define SUPPORT_GESTURE
-
-#ifdef SUPPORT_GESTURE
-
-#define ENABLE_DTAP     0x01
-#define DTAP_DETECT     0x03
-
-#define DouTap              1   // double tap
-
-//ruanbanmao@BSP add for tp gesture 2015-05-06, begin
-
-#define BIT7 (0x1 << 7)
-
-int DouTap_gesture = 0; //"double tap"
-
-
-int Enable_gesture =0;
-static int gesture_switch = 0;
-//ruanbanmao@BSP add for tp gesture 2015-05-06, end
-#endif
-
-#ifdef SUPPORT_GESTURE
-	if( ts->gesture_enable ){
-		atomic_set(&ts->is_stop,0);
-		mutex_lock(&ts->mutex);
-		touch_enable(ts);
-		nvt_enable_interrupt_for_gesture(ts, 1);
-		mutex_unlock(&ts->mutex);
-		TPD_ERR("enter gesture mode\n");
-
-		//set_doze_time(2);	/*change dozeinterval by firmware*/
-		//just for fajita
-		if (ts->project_version == 0x03) {
-			mutex_lock(&ts->mutex);
-			tp_single_tap_en(ts, true);
-			mutex_unlock(&ts->mutex);
-		}
-	}
-	else{
-		if (!ts->loading_fw) {
-			//loading_fw tp cannot enter sleep mode;
-			ret = nvt_mode_change(0x01);
-			//when gesture disable TP sleep eary
-			if (ret < 0) {
-				TPD_ERR("%s line%d ERROR %d!\n",
-					__func__, __LINE__, ret);
-			}
-		}
-	}
-#endif
-
-
-static struct synaptics_ts_data *ts_g = NULL;
-
-static struct proc_dir_entry *prEntry_tp = NULL;
-
-
-static void nvt_ts_work_func(struct work_struct *work)
-{
-	int ret,status_check;
-	uint8_t status = 0;
-	uint8_t inte = 0;
-
-    	struct nvt_ts_data *ts = ts_g;
-
-	pm_qos_add_request(&pm_qos_req_tp, PM_QOS_CPU_DMA_LATENCY,
-				PM_QOS_VALUE_TP);
-	if (atomic_read(&ts->is_stop) == 1)
-	{
-		touch_disable(ts);
-		goto EXIT;
-	}
-
-	if( ts->enable_remote) {
-		goto END;
-	}
-	ret = nvt_rmi4_i2c_write_byte(ts->client, 0xff, 0x00 );
-	ret = nvt_rmi4_i2c_read_word(ts->client, F01_RMI_DATA_BASE);
-
-	if( ret < 0 ) {
-		TPDTM_DMESG("Nvt:ret = %d\n", ret);
-		nvt_hard_reset(ts);
-		if (ts->is_suspended == 1 && ts->gesture_enable == 0) {
-			touch_disable(ts);
-			goto EXIT;
-		}
-		goto END;
-	}
-	status = ret & 0xff;
-	inte = (ret & 0x7f00)>>8;
-	//TPD_ERR("%s status[0x%x],inte[0x%x]\n",__func__,status,inte);
-        if(status & 0x80){
-		TPD_DEBUG("enter reset tp status,and ts->in_gesture_mode is:%d\n",ts->in_gesture_mode);
-		status_check = nvt_init_panel(ts);
-		if (status_check < 0) {
-			TPD_ERR("nvt_init_panel failed\n");
-		}
-		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
-			nvt_enable_interrupt_for_gesture(ts, 1);
-			if (ts->project_version == 0x03) {
-				mutex_lock(&ts->mutex);
-				tp_single_tap_en(ts, true);
-				if (ts->en_up_down)
-					touch_hold_en(ts, true);
-				mutex_unlock(&ts->mutex);
-			}
-		}
-	}
-/*
-	if(0 != status && 1 != status) {//0:no error;1: after hard reset;the two state don't need soft reset
-        TPD_ERR("%s status[0x%x],inte[0x%x]\n",__func__,status,inte);
-		int_state(ts);
-		goto END;
-	}
-*/
-	if (inte == 1) {
-		TPD_ERR("%s: spontaneous reset detected\n", __func__);
-		ret = nvt_rmi4_free_fingers(ts);
-		if (ret < 0)
-			TPD_ERR("%s: Failed to reinit device\n", __func__);
-	}
-
-	if( inte & 0x04 ) {
-
-	if (ts->project_version == 0x03) {
-		if (ts->en_up_down && ts->in_gesture_mode == 0)
-			fp_detect(ts);
-	}
-
-	if (ts->is_suspended == 1) {
-	#ifdef SUPPORT_GESTURE
-		if (ts->in_gesture_mode == 1) {
-			mutex_lock(&ts->mutex);
-			gesture_judge(ts);
-			mutex_unlock(&ts->mutex);
-		}
-	#endif
-	} else {
-		int_touch();
-	}
-	}
-	if( inte & 0x10 ){
-		int_key_report_nvt(ts);
-	}
-
-
-END:
-	//ret = set_changer_bit(ts);
-	touch_enable(ts);
-EXIT:
-	pm_qos_remove_request(&pm_qos_req_tp);
-	return;
-}
-
-
-
-#ifdef SUPPORT_GESTURE
-static ssize_t tp_gesture_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
-{
-	int ret = 0;
-	char page[PAGESIZE];
-	struct nvt_ts_data *ts = ts_g;
-	if(!ts)
-		return ret;
-	TPD_DEBUG("gesture enable is: %d\n", ts->gesture_enable);
-	ret = sprintf(page, "%d\n", ts->gesture_enable);
-	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
-	return ret;
-}
-
-static ssize_t tp_gesture_write_func(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
-{
-	char buf[10];
-	struct nvt_ts_data *ts = ts_g;
-	if(!ts)
-		return count;
-	if( count > 3 || ts->is_suspended)
-		return count;
-	if( copy_from_user(buf, buffer, count) ){
-		TPD_ERR(KERN_INFO "%s: read proc input error.\n", __func__);
-		return count;
-	}
-	//ruanbanmao@BSP add for tp gesture 2015-05-06, begin
-	TPD_ERR("%s write argc1[0x%x],argc2[0x%x]\n",__func__,buf[0],buf[1]);
-
-	
-	DouTap_gesture = (buf[0] & BIT7)?1:0; //double tap
-
-	
-	//enable gesture
-	Enable_gesture = (buf[1] & BIT7)?1:0;
-
-	if (DouTap_gesture || Enable_gesture) {
-		ts->gesture_enable = 1;
-	}
-	else
-	{
-		ts->gesture_enable = 0;
-	}
-    //ruanbanmao@BSP add for tp gesture 2015-05-06, end
-	return count;
-}
-
-static ssize_t gesture_switch_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
-{
-	int ret = 0;
-	char page[PAGESIZE];
-	struct nvt_ts_data *ts = ts_g;
-	if(!ts)
-		return ret;
-	ret = sprintf(page, "gesture_switch:%d\n", gesture_switch);
-	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
-	return ret;
-}
-
-static ssize_t gesture_switch_write_func(struct file *file, const char __user *page, size_t count, loff_t *ppos)
-{
-	int ret,write_flag=0;
-	char buf[10]={0};
-	struct nvt_ts_data *ts = ts_g;
-
-	if(ts->loading_fw) {
-		TPD_ERR("%s FW is updating break!!\n",__func__);
-		return count;
-	}
-	if( copy_from_user(buf, page, count) ){
-		TPD_ERR("%s: read proc input error.\n", __func__);
-		return count;
-	}
-	__pm_stay_awake(&ts->source);	//avoid system enter suspend lead to i2c error
-	mutex_lock(&ts->mutex);
-	ret = sscanf(buf,"%d",&write_flag);
-	gesture_switch = write_flag;
-	TPD_ERR("gesture_switch:%d,suspend:%d,gesture:%d\n",gesture_switch,ts->is_suspended,ts->gesture_enable);
-	if (1 == gesture_switch){
-		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
-			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
-			nvt_mode_change(0x80);
-			//synaptics_enable_interrupt_for_gesture(ts, 1);
-			//change active mode no need to write gesture mode.
-			touch_enable(ts);
-		}
-	}else if(2 == gesture_switch){
-		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
-			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
-			nvt_mode_change(0x81);
-			touch_disable(ts);
-			//synaptics_enable_interrupt_for_gesture(ts, 0);
-			//change slepp mode no need to write gesture mode.
-		}
-	}
-	mutex_unlock(&ts->mutex);
-	__pm_relax(&ts->source);
-
-	return count;
-}
-
-// chenggang.li@BSP.TP modified for oem 2014-08-08 create node
-/******************************start****************************/
-static const struct file_operations tp_gesture_proc_fops = {
-	.write = tp_gesture_write_func,
-	.read =  tp_gesture_read_func,
-	.open = simple_open,
-	.owner = THIS_MODULE,
-};
-
-static const struct file_operations gesture_switch_proc_fops = {
-	.write = gesture_switch_write_func,
-	.read =  gesture_switch_read_func,
-	.open = simple_open,
-	.owner = THIS_MODULE,
-};
-#endif
-
-
-
-static int init_nvt_proc(void)
-{
-	int ret = 0;
-	struct proc_dir_entry *prEntry_tmp  = NULL;
-	prEntry_tp = proc_mkdir("touchpanel", NULL);
-	if( prEntry_tp == NULL ){
-		ret = -ENOMEM;
-		TPD_ERR("Couldn't create touchpanel\n");
-	}
-
-#ifdef SUPPORT_GESTURE
-	prEntry_tmp = proc_create( "gesture_enable", 0666, prEntry_tp, &tp_gesture_proc_fops);
-	if(prEntry_tmp == NULL){
-		ret = -ENOMEM;
-        TPD_ERR("Couldn't create gesture_enable\n");
-	}
-	prEntry_tmp = proc_create( "gesture_switch", 0666, prEntry_tp, &gesture_switch_proc_fops);
-	if(prEntry_tmp == NULL){
-		ret = -ENOMEM;
-		TPD_ERR("Couldn't create gesture_switch\n");
-	}
-#endif
-
-
-
-
-
-#ifdef SUPPORT_GESTURE
-	if( ts->gesture_enable ){
-		atomic_set(&ts->is_stop,0);
-		mutex_lock(&ts->mutex);
-		touch_enable(ts);
-		nvt_enable_interrupt_for_gesture(ts, 1);
-		mutex_unlock(&ts->mutex);
-		TPD_ERR("enter gesture mode\n");
-
-		//set_doze_time(2);	/*change dozeinterval by firmware*/
-		//just for fajita
-		if (ts->project_version == 0x03) {
-			mutex_lock(&ts->mutex);
-			tp_single_tap_en(ts, true);
-			mutex_unlock(&ts->mutex);
-		}
-	}
-	else{
-		if (!ts->loading_fw) {
-			//loading_fw tp cannot enter sleep mode;
-			ret = nvt_mode_change(0x01);
-			//when gesture disable TP sleep eary
-			if (ret < 0) {
-				TPD_ERR("%s line%d ERROR %d!\n",
-					__func__, __LINE__, ret);
-			}
-		}
-	}
-#endif
-	TPD_DEBUG("%s normal end\n", __func__);
-	return 0;
-}
-
-
-
-
-
-
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
 	KEY_BACK,
@@ -1394,6 +1053,165 @@ static int mi_input_event(struct input_dev *dev, unsigned int type, unsigned int
 	return 0;
 }
 #endif
+
+/*************TouchOOS*************/
+
+static int gesture_switch = 0;
+
+
+static struct nvt_ts_data *ts_g = NULL;
+static struct proc_dir_entry *prEntry_tp = NULL;
+
+#define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
+
+#define TPD_DEBUG(a,arg...)\
+	do{\
+		if(tp_debug)\
+		pr_err(TPD_DEVICE ": " a,##arg);\
+	}while(0)
+
+
+#ifdef SUPPORT_GESTURE
+static ssize_t tp_gesture_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	int ret = 0;
+	char page[PAGESIZE];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return ret;
+	TPD_DEBUG("gesture enable is: %d\n", ts->gesture_enable);
+	ret = sprintf(page, "%d\n", ts->gesture_enable);
+	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
+	return ret;
+}
+
+static ssize_t tp_gesture_write_func(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char buf[10];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return count;
+	if( count > 3 || ts->is_suspended)
+		return count;
+	if( copy_from_user(buf, buffer, count) ){
+		TPD_ERR(KERN_INFO "%s: read proc input error.\n", __func__);
+		return count;
+	}
+	//ruanbanmao@BSP add for tp gesture 2015-05-06, begin
+	TPD_ERR("%s write argc1[0x%x],argc2[0x%x]\n",__func__,buf[0],buf[1]);
+
+	DouTap_gesture = (buf[0] & BIT7)?1:0; //double tap
+
+	//enable gesture
+	Enable_gesture = (buf[1] & BIT7)?1:0;
+
+	if (DouTap_gesture || Enable_gesture) {
+		ts->gesture_enable = 1;
+	}
+	else
+	{
+		ts->gesture_enable = 0;
+	}
+    //ruanbanmao@BSP add for tp gesture 2015-05-06, end
+	return count;
+}
+
+static ssize_t gesture_switch_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	int ret = 0;
+	char page[PAGESIZE];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return ret;
+	ret = sprintf(page, "gesture_switch:%d\n", gesture_switch);
+	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
+	return ret;
+}
+
+static ssize_t gesture_switch_write_func(struct file *file, const char __user *page, size_t count, loff_t *ppos)
+{
+	int ret,write_flag=0;
+	char buf[10]={0};
+	struct nvt_ts_data *ts = ts_g;
+
+	if(ts->loading_fw) {
+		TPD_ERR("%s FW is updating break!!\n",__func__);
+		return count;
+	}
+	if( copy_from_user(buf, page, count) ){
+		TPD_ERR("%s: read proc input error.\n", __func__);
+		return count;
+	}
+	__pm_stay_awake(&ts->source);	//avoid system enter suspend lead to i2c error
+	mutex_lock(&ts->mutex);
+	ret = sscanf(buf,"%d",&write_flag);
+	gesture_switch = write_flag;
+	TPD_ERR("gesture_switch:%d,suspend:%d,gesture:%d\n",gesture_switch,ts->is_suspended,ts->gesture_enable);
+	if (1 == gesture_switch){
+		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
+			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
+			nvt_mode_change(0x80);
+			//nvt_enable_interrupt_for_gesture(ts, 1);
+			//change active mode no need to write gesture mode.
+			touch_enable(ts);
+		}
+	}else if(2 == gesture_switch){
+		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
+			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
+			nvt_mode_change(0x81);
+			touch_disable(ts);
+			//nvt_enable_interrupt_for_gesture(ts, 0);
+			//change slepp mode no need to write gesture mode.
+		}
+	}
+	mutex_unlock(&ts->mutex);
+	__pm_relax(&ts->source);
+
+	return count;
+}
+
+// chenggang.li@BSP.TP modified for oem 2014-08-08 create node
+/******************************start****************************/
+static const struct file_operations tp_gesture_proc_fops = {
+	.write = tp_gesture_write_func,
+	.read =  tp_gesture_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
+static const struct file_operations gesture_switch_proc_fops = {
+	.write = gesture_switch_write_func,
+	.read =  gesture_switch_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
+
+static int init_nvt_proc(void)
+{
+	int ret = 0;
+	struct proc_dir_entry *prEntry_tmp  = NULL;
+	prEntry_tp = proc_mkdir("touchpanel", NULL);
+	if( prEntry_tp == NULL ){
+		ret = -ENOMEM;
+		TPD_ERR("Couldn't create touchpanel\n");
+	}
+
+#ifdef SUPPORT_GESTURE
+	prEntry_tmp = proc_create( "gesture_enable", 0666, prEntry_tp, &tp_gesture_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+        TPD_ERR("Couldn't create gesture_enable\n");
+	}
+	prEntry_tmp = proc_create( "gesture_switch", 0666, prEntry_tp, &gesture_switch_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+		TPD_ERR("Couldn't create gesture_switch\n");
+	}
+
+#endif
+
+
 
 #define POINT_DATA_LEN 65
 /*******************************************************
