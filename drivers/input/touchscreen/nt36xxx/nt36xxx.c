@@ -1408,7 +1408,7 @@ static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 		dev_dbg(dev, "enable_dt2w write error\n");
 		return -EINVAL;
 	}*/
-    ts->gesture_enabled = 1; // Always set to 1 (enable)
+    ts->gesture_enable = 1; // Always set to 1 (enable)
     return count;
 }
 
