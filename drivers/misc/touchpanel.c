@@ -10,6 +10,7 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/uaccess.h>
+#include <linux/string.h> // for strlcpy
 
 #define PROC_DIRNAME "touchpanel"
 #define GESTURE_ENABLE_FILE "gesture_enable"
@@ -17,7 +18,7 @@
 static struct proc_dir_entry *proc_dir;
 
 static ssize_t gesture_enable_write(struct file *file, const char __user *user_buf,
-                                   size_t count, loff_t *f_pos) {
+                                     size_t count, loff_t *f_pos) {
   char buffer[3]; // To accommodate null terminator
   int ret;
 
@@ -48,6 +49,7 @@ static const struct file_operations gesture_enable_ops = {
 static int __init touchpanel_init(void) {
   struct proc_dir_entry *gesture_enable;
   int ret;
+  char buffer[sizeof("0x80, 0x0")]; // Allocate buffer to hold data
 
   proc_dir = proc_mkdir(PROC_DIRNAME, NULL);
   if (!proc_dir) {
@@ -61,20 +63,13 @@ static int __init touchpanel_init(void) {
     return -ENOMEM;
   }
 
-  // Write "0x80, 0x0" to the gesture_enable file on creation
-  ret = proc_info(gesture_enable, 0, buffer, sizeof(buffer));
-  if (ret <= 0) {
-    // Handle error (e.g., couldn't get info)
-    remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
-    remove_proc_entry(PROC_DIRNAME, NULL);
-    return -EIO;
-  }
-
-  // Write data to buffer based on ret value (buffer now contains information)
-  // You might need to manipulate the buffer content based on the proc entry type
+  // Write data to buffer
   strlcpy(buffer, "0x80, 0x0", sizeof(buffer));
+
+  // Write data to the gesture_enable file
   ret = kernel_write(gesture_enable->data, buffer, sizeof(buffer));
   if (ret != sizeof(buffer)) {
+    printk(KERN_ERR "Touch panel gesture: Error writing to file (%d)\n", ret);
     remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
     remove_proc_entry(PROC_DIRNAME, NULL);
     return -EIO;
