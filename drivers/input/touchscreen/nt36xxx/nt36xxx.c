@@ -1062,7 +1062,7 @@ static int gesture_switch = 0;
 static struct nvt_ts_data *ts_g = NULL;
 static struct proc_dir_entry *prEntry_tp = NULL;
 
-#define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
+#define TPD_ERR(a, arg...)
 
 #define TPD_DEBUG(a,arg...)\
 	do{\
@@ -1208,7 +1208,6 @@ static int init_nvt_proc(void)
 		ret = -ENOMEM;
 		TPD_ERR("Couldn't create gesture_switch\n");
 	}
-
 #endif
 
 
