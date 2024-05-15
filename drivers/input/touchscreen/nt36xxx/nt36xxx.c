@@ -1056,7 +1056,28 @@ static int mi_input_event(struct input_dev *dev, unsigned int type, unsigned int
 
 /*************TouchOOS*************/
 
+#ifdef SUPPORT_GESTURE
+
+#define ENABLE_DTAP     0x01
+
+
+#define DTAP_DETECT     0x03
+
+
+#define DouTap              1   // double tap
+
+//ruanbanmao@BSP add for tp gesture 2015-05-06, begin
+
+#define BIT7 (0x1 << 7)
+
+
+int DouTap_gesture = 0; //"double tap"
+
+
+int Enable_gesture =0;
 static int gesture_switch = 0;
+//ruanbanmao@BSP add for tp gesture 2015-05-06, end
+#endif
 
 
 static struct nvt_ts_data *ts_g = NULL;
