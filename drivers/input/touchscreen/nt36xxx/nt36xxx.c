@@ -507,27 +507,6 @@ static const struct file_operations nvt_flash_fops = {
 	.read = nvt_flash_read,
 };
 
-static struct proc_dir_entry *prEntry_tp = NULL;
-#define TPD_ERR
-
-static int init_nvt_proc(void)
-{
-	int ret = 0;
-	struct proc_dir_entry *prEntry_tmp  = NULL;
-	prEntry_tp = proc_mkdir("touchpanel", NULL);
-	if( prEntry_tp == NULL ){
-		ret = -ENOMEM;
-		TPD_ERR("Couldn't create touchpanel\n");
-	}
-
-#ifdef SUPPORT_GESTURE
-	prEntry_tmp = proc_create( "gesture_enable", 0666, prEntry_tp, &tp_gesture_proc_fops);
-	if(prEntry_tmp == NULL){
-		ret = -ENOMEM;
-        TPD_ERR("Couldn't create gesture_enable\n");
-	}
-#endif
-
 /*******************************************************
 Description:
 	Novatek touchscreen /proc/NVTflash initial function.
@@ -567,6 +546,27 @@ static void nvt_flash_proc_deinit(void)
 		NVT_LOG("Removed /proc/%s\n", DEVICE_NAME);
 	}
 }
+#endif
+
+static struct proc_dir_entry *prEntry_tp = NULL;
+#define TPD_ERR(a, arg...)
+
+static int init_nvt_proc(void)
+{
+	int ret = 0;
+	struct proc_dir_entry *prEntry_tmp  = NULL;
+	prEntry_tp = proc_mkdir("touchpanel", NULL);
+	if( prEntry_tp == NULL ){
+		ret = -ENOMEM;
+		TPD_ERR("Couldn't create touchpanel\n");
+	}
+
+#ifdef SUPPORT_GESTURE
+	prEntry_tmp = proc_create( "gesture_enable", 0666, prEntry_tp, &tp_gesture_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+        TPD_ERR("Couldn't create gesture_enable\n");
+	}
 #endif
 
 #if WAKEUP_GESTURE
