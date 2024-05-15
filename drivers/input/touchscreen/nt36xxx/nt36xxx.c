@@ -508,7 +508,7 @@ static const struct file_operations nvt_flash_fops = {
 };
 
 static struct proc_dir_entry *prEntry_tp = NULL;
-#define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
+#define TPD_ERR
 
 static int init_nvt_proc(void)
 {
