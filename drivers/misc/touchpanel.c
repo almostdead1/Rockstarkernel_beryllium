@@ -62,9 +62,19 @@ static int __init touchpanel_init(void) {
   }
 
   // Write "0x80, 0x0" to the gesture_enable file on creation
-  ret = kernel_write(gesture_enable->data, file_inode(gesture_enable)->i_mapping->a_ops->seq_start(gesture_enable),
-                     "0x80, 0x0", sizeof("0x80, 0x0"));
-  if (ret != sizeof("0x80, 0x0")) {
+  ret = proc_info(gesture_enable, 0, buffer, sizeof(buffer));
+  if (ret <= 0) {
+    // Handle error (e.g., couldn't get info)
+    remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
+    remove_proc_entry(PROC_DIRNAME, NULL);
+    return -EIO;
+  }
+
+  // Write data to buffer based on ret value (buffer now contains information)
+  // You might need to manipulate the buffer content based on the proc entry type
+  strlcpy(buffer, "0x80, 0x0", sizeof(buffer));
+  ret = kernel_write(gesture_enable->data, buffer, sizeof(buffer));
+  if (ret != sizeof(buffer)) {
     remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
     remove_proc_entry(PROC_DIRNAME, NULL);
     return -EIO;
