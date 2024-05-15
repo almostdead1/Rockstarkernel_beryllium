@@ -58,7 +58,7 @@ extern void Boot_Update_Firmware(struct work_struct *work);
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
 #endif
 
-#define PROC_SYMLINK_PATH "touchpanel"
+/*#define PROC_SYMLINK_PATH "touchpanel"*/
 
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
@@ -1371,6 +1371,24 @@ err_pinctrl_get:
 	return retval;
 }
 
+static ssize_t nvt_panel_color_show(struct device *dev,
+				    struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%c\n", ts->lockdown_info[2]);
+}
+
+static ssize_t nvt_panel_vendor_show(struct device *dev,
+				     struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%c\n", ts->lockdown_info[6]);
+}
+
+static ssize_t nvt_panel_display_show(struct device *dev,
+				     struct device_attribute *attr, char *buf)
+{
+	return snprintf(buf, PAGE_SIZE, "%c\n", ts->lockdown_info[1]);
+}
+
 static ssize_t nvt_panel_gesture_enable_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
@@ -1392,10 +1410,16 @@ static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 	}
 }
 
+static DEVICE_ATTR(panel_vendor, (S_IRUGO), nvt_panel_vendor_show, NULL);
+static DEVICE_ATTR(panel_color, (S_IRUGO), nvt_panel_color_show, NULL);
+static DEVICE_ATTR(panel_display, (S_IRUGO), nvt_panel_display_show, NULL);
 static DEVICE_ATTR(gesture_enable, S_IWUSR | S_IRUSR,
 		nvt_panel_gesture_enable_show, nvt_panel_gesture_enable_store);
 
 static struct attribute *nvt_attr_group[] = {
+	&dev_attr_panel_vendor.attr,
+	&dev_attr_panel_color.attr,
+	&dev_attr_panel_display.attr,
 	&dev_attr_gesture_enable.attr,
 	NULL,
 };
