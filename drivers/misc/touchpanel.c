@@ -15,6 +15,8 @@
 #define PROC_DIRNAME "touchpanel"
 #define GESTURE_ENABLE_FILE "gesture_enable"
 
+struct proc_dir_entry;
+
 static struct proc_dir_entry *proc_dir;
 
 static ssize_t gesture_enable_write(struct file *file, const char __user *user_buf,
