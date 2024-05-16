@@ -24,9 +24,7 @@ static int __init touchpanel_init(void) {
 }
 
 static void __exit touchpanel_exit(void) {
-  remove_proc_entry(GESTURE_ENABLE_FILE, proc_dir);
-  remove_proc_entry(PROC_DIRNAME, NULL);
-  printk(KERN_INFO "Touch panel folder and gesture_enable file removed\n");
+  printk(KERN_INFO "Touch panel folder and gesture_enable exit\n");
 }
 
 module_init(touchpanel_init);
