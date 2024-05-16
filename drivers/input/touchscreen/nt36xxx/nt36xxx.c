@@ -1454,19 +1454,6 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 	return ret;
 }
 
-/*
-static int oos_input_symlink(void) {
-    static struct proc_dir_entry *tp_oos;
-	int ret = 0;
-
-	tp_oos = proc_symlink("tp_gesture", NULL, "touchpanel/gesture_enable");
-	if (!tp_oos) {
-		ret = -ENOMEM;
-	}
-    return ret;
-}
-*/
-
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
@@ -1683,13 +1670,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	if (ret < 0) {
 		NVT_ERR("Failed to symlink input device!\n");
 	}
-
-/*
-	ret = oos_input_symlink();
-	if (ret < 0) {
-		NVT_ERR("Failed to symlink oos touch gesture!\n");
-	}
-*/
 
 #if NVT_TOUCH_EXT_PROC
 	ret = nvt_extra_proc_init();
