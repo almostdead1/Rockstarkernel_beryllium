@@ -114,6 +114,7 @@ struct nvt_ts_data {
 	struct pinctrl_state *pinctrl_state_active;
 	struct pinctrl_state *pinctrl_state_suspend;
 
+	struct attribute_group attrs;
 	struct regulator *vddio_reg;
 	struct regulator *lab_reg;
 	struct regulator *ibb_reg;
