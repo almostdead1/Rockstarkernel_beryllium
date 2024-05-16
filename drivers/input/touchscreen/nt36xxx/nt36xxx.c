@@ -58,7 +58,7 @@ extern void Boot_Update_Firmware(struct work_struct *work);
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
 #endif
 
-/*#define PROC_SYMLINK_PATH "touchpanel"*/
+#define PROC_SYMLINK_PATH "touchpanel"
 
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
@@ -1415,12 +1415,15 @@ static DEVICE_ATTR(panel_color, (S_IRUGO), nvt_panel_color_show, NULL);
 static DEVICE_ATTR(panel_display, (S_IRUGO), nvt_panel_display_show, NULL);
 static DEVICE_ATTR(gesture_enable, S_IWUSR | S_IRUSR,
 		nvt_panel_gesture_enable_show, nvt_panel_gesture_enable_store);
+static DEVICE_ATTR(double_tap_enable, S_IWUSR | S_IRUSR,
+		nvt_panel_gesture_enable_show, nvt_panel_gesture_enable_store);
 
 static struct attribute *nvt_attr_group[] = {
 	&dev_attr_panel_vendor.attr,
 	&dev_attr_panel_color.attr,
 	&dev_attr_panel_display.attr,
 	&dev_attr_gesture_enable.attr,
+	&dev_attr_double_tap_enable.attr,
 	NULL,
 };
 
@@ -1442,7 +1445,7 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 
 	pr_err("%s: driver_path=%s\n", __func__, driver_path);
 
-/*	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);*/
+	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);
 
 	if (!ts->input_proc) {
 		ret = -ENOMEM;
@@ -1450,6 +1453,19 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 	kfree(driver_path);
 	return ret;
 }
+
+/*
+static int oos_input_symlink(void) {
+    static struct proc_dir_entry *tp_oos;
+	int ret = 0;
+
+	tp_oos = proc_symlink("tp_gesture", NULL, "touchpanel/gesture_enable");
+	if (!tp_oos) {
+		ret = -ENOMEM;
+	}
+    return ret;
+}
+*/
 
 /*******************************************************
 Description:
@@ -1667,6 +1683,13 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	if (ret < 0) {
 		NVT_ERR("Failed to symlink input device!\n");
 	}
+
+/*
+	ret = oos_input_symlink();
+	if (ret < 0) {
+		NVT_ERR("Failed to symlink oos touch gesture!\n");
+	}
+*/
 
 #if NVT_TOUCH_EXT_PROC
 	ret = nvt_extra_proc_init();
