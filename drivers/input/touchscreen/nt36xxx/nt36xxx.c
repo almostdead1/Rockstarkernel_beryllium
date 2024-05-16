@@ -58,7 +58,7 @@ extern void Boot_Update_Firmware(struct work_struct *work);
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
 #endif
 
-/*#define PROC_SYMLINK_PATH "touchpanel"*/
+#define PROC_SYMLINK_PATH "touchpanel"
 
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
@@ -1442,7 +1442,7 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 
 	pr_err("%s: driver_path=%s\n", __func__, driver_path);
 
-/*	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);*/
+	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);
 
 	if (!ts->input_proc) {
 		ret = -ENOMEM;
