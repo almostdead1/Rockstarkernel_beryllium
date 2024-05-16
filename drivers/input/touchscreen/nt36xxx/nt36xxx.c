@@ -58,7 +58,7 @@ extern void Boot_Update_Firmware(struct work_struct *work);
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data);
 #endif
 
-#define PROC_SYMLINK_PATH "touchpanel"
+/*#define PROC_SYMLINK_PATH "touchpanel"*/
 
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
@@ -1392,7 +1392,7 @@ static ssize_t nvt_panel_display_show(struct device *dev,
 static ssize_t nvt_panel_gesture_enable_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
-        const char c = ts->gesture_enabled ? '1' : '1';
+        const char c = ts->gesture_enabled ? '1' : '0';
         return sprintf(buf, "%c\n", c);
 }
 
@@ -1402,7 +1402,7 @@ static ssize_t nvt_panel_gesture_enable_store(struct device *dev,
 	int i;
 
 	if (sscanf(buf, "%u", &i) == 1 && i < 2) {
-		ts->gesture_enabled = 1;
+		ts->gesture_enabled = i;
 		return count;
 	} else {
 		dev_dbg(dev, "enable_dt2w write error\n");
@@ -1442,7 +1442,7 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 
 	pr_err("%s: driver_path=%s\n", __func__, driver_path);
 
-	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);
+/*	ts->input_proc = proc_symlink(PROC_SYMLINK_PATH, NULL, driver_path);*/
 
 	if (!ts->input_proc) {
 		ret = -ENOMEM;
