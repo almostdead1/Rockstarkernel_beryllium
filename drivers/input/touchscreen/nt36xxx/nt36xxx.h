@@ -158,6 +158,7 @@ struct nvt_ts_data {
 #endif
 	int current_index;
 	struct pm_qos_request pm_qos_req;
+	struct proc_dir_entry *input_proc;
 };
 
 #if WAKEUP_GESTURE
