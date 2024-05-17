@@ -1728,7 +1728,7 @@ static int nvt_init_proc(void) {
                                       proc_touchpanel, NULL);
     if (!proc_gesture_enable) {
         pr_err("Failed to create /proc/touchpanel/gesture_enable file\n");
-        proc_remove(proc_touchpanel);
+//        proc_remove(proc_touchpanel);
         return -ENOMEM;
     }
 
