@@ -1712,6 +1712,30 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 	return ret;
 }
 
+static int nvt_init_proc(void) {
+    int ret = 0;
+    struct proc_dir_entry *proc_touchpanel, *proc_gesture_enable;
+
+    // Create the /proc/touchpanel directory.
+    proc_touchpanel = proc_mkdir("touchpanel", NULL);
+    if (!proc_touchpanel) {
+        pr_err("Failed to create /proc/touchpanel directory\n");
+        return -ENOMEM;
+    }
+
+    // Create the gesture_enable file with read/write permissions (0666).
+    proc_gesture_enable = proc_create("gesture_enable", 0666,
+                                      proc_touchpanel, NULL);
+    if (!proc_gesture_enable) {
+        pr_err("Failed to create /proc/touchpanel/gesture_enable file\n");
+        proc_remove(proc_touchpanel);
+        return -ENOMEM;
+    }
+
+    pr_info("Created /proc/touchpanel directory and gesture_enable file\n");
+    return ret;
+}
+
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
