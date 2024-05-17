@@ -1694,6 +1694,24 @@ static struct attribute *nvt_attr_group[] = {
     NULL
 };   
 
+static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
+	char *driver_path;
+	int ret = 0;
+	driver_path = kzalloc(PATH_MAX, GFP_KERNEL);
+	if (!driver_path) {
+		pr_err("%s: failed to allocate memory\n", __func__);
+		return -ENOMEM;
+	}
+
+	sprintf(driver_path, "/sys%s",
+			kobject_get_path(&ts->client->dev.kobj, GFP_KERNEL));
+
+	pr_err("%s: driver_path=%s\n", __func__, driver_path);
+
+	kfree(driver_path);
+	return ret;
+}
+
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
@@ -1717,7 +1735,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	}
 
 	ts->client = client;
-	ts->input_proc = NULL;
 	i2c_set_clientdata(client, ts);
 
 	//---parse dts---
