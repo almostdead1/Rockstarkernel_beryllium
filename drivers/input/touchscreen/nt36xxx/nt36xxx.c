@@ -1933,6 +1933,12 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	}
 #endif
 
+	ts->attrs.attrs = nvt_attr_group;
+	ret = sysfs_create_group(&client->dev.kobj, &ts->attrs);
+	if (ret) {
+		NVT_ERR("Cannot create sysfs structure!\n");
+	}
+
 	bTouchIsAwake = 1;
 	NVT_LOG("end\n");
 
