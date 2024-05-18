@@ -1924,7 +1924,10 @@ static int init_nvt_proc(void)
 		TPD_ERR("Couldn't create gesture_switch\n");
 	}
 
+return ret;
 }
+
+
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
