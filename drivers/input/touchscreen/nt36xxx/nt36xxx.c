@@ -1712,30 +1712,197 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 	return ret;
 }
 
-static int nvt_init_proc(void) {
-    int ret = 0;
-    struct proc_dir_entry *proc_touchpanel, *proc_gesture_enable;
 
-    // Create the /proc/touchpanel directory.
-    proc_touchpanel = proc_mkdir("touchpanel", NULL);
-    if (!proc_touchpanel) {
-        pr_err("Failed to create /proc/touchpanel directory\n");
-        return -ENOMEM;
-    }
+#define TPD_DEVICE "novatek,nvt,Nvt-ts"
 
-    // Create the gesture_enable file with read/write permissions (0666).
-    proc_gesture_enable = proc_create("gesture_enable", 0666,
-                                      proc_touchpanel, NULL);
-    if (!proc_gesture_enable) {
-        pr_err("Failed to create /proc/touchpanel/gesture_enable file\n");
-//        proc_remove(proc_touchpanel);
-        return -ENOMEM;
-    }
 
-    pr_info("Created /proc/touchpanel directory and gesture_enable file\n");
-    return ret;
+#define DouTap              1   // double tap
+int DouTap_gesture = 1; //"double tap"
+
+int Enable_gesture =1;
+static int gesture_switch = 1;
+/*********************for Debug LOG switch*******************/
+#define TPD_ERR(a, arg...)  pr_err(TPD_DEVICE ": " a, ##arg)
+#define TPDTM_DMESG(a, arg...)  printk(TPD_DEVICE ": " a, ##arg)
+
+#define TPD_DEBUG(a,arg...)\
+	do{\
+		if(tp_debug)\
+		pr_err(TPD_DEVICE ": " a,##arg);\
+	}while(0)
+
+
+static struct nvt_ts_data *ts_g = NULL;
+
+static struct proc_dir_entry *prEntry_tp = NULL;
+
+
+static ssize_t nvt_gesture_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	int ret = 0;
+	char page[PAGESIZE];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return ret;
+	TPD_DEBUG("gesture enable is: %d\n", ts->gesture_enable);
+	ret = sprintf(page, "%d\n", ts->gesture_enable);
+	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
+	return ret;
 }
 
+static ssize_t nvt_gesture_write_func(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char buf[10];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return count;
+	if( count > 3 || ts->is_suspended)
+		return count;
+	if( copy_from_user(buf, buffer, count) ){
+		TPD_ERR(KERN_INFO "%s: read proc input error.\n", __func__);
+		return count;
+	}
+	//ruanbanmao@BSP add for tp gesture 2015-05-06, begin
+	TPD_ERR("%s write argc1[0x%x],argc2[0x%x]\n",__func__,buf[0],buf[1]);
+
+	
+	DouTap_gesture = (buf[0] & BIT7)?1:0; //double tap
+
+	
+	//enable gesture
+	Enable_gesture = (buf[1] & BIT7)?1:0;
+
+	if (DouTap_gesture || Enable_gesture) {
+		ts->gesture_enable = 1;
+	}
+	else
+	{
+		ts->gesture_enable = 0;
+	}
+    //ruanbanmao@BSP add for tp gesture 2015-05-06, end
+	return count;
+}
+static ssize_t nvt_coordinate_proc_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	int ret = 0;
+	char page[PAGESIZE];
+	TPD_ERR("%s:gesture_upload = %d \n", __func__, gesture);
+	ret = sprintf(page, "%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d\n",
+		gesture, Point_start.x, Point_start.y, Point_end.x, Point_end.y,
+		Point_1st.x, Point_1st.y, Point_2nd.x, Point_2nd.y,
+		Point_3rd.x, Point_3rd.y, Point_4th.x, Point_4th.y,
+		clockwise);
+
+	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
+	return ret;
+}
+
+static ssize_t nvt_gesture_switch_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
+{
+	int ret = 0;
+	char page[PAGESIZE];
+	struct nvt_ts_data *ts = ts_g;
+	if(!ts)
+		return ret;
+	ret = sprintf(page, "gesture_switch:%d\n", gesture_switch);
+	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
+	return ret;
+}
+
+static ssize_t nvt_gesture_switch_write_func(struct file *file, const char __user *page, size_t count, loff_t *ppos)
+{
+	int ret,write_flag=0;
+	char buf[10]={0};
+	struct nvt_ts_data *ts = ts_g;
+
+	if(ts->loading_fw) {
+		TPD_ERR("%s FW is updating break!!\n",__func__);
+		return count;
+	}
+	if( copy_from_user(buf, page, count) ){
+		TPD_ERR("%s: read proc input error.\n", __func__);
+		return count;
+	}
+	__pm_stay_awake(&ts->source);	//avoid system enter suspend lead to i2c error
+	mutex_lock(&ts->mutex);
+	ret = sscanf(buf,"%d",&write_flag);
+	gesture_switch = write_flag;
+	TPD_ERR("gesture_switch:%d,suspend:%d,gesture:%d\n",gesture_switch,ts->is_suspended,ts->gesture_enable);
+	if (1 == gesture_switch){
+		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
+			CTP_I2C_WRITE_byte_data(ts->client, 0xff, 0x0);
+			nvt_mode_change(0x80);
+			//synaptics_enable_interrupt_for_gesture(ts, 1);
+			//change active mode no need to write gesture mode.
+			touch_enable(ts);
+		}
+	}else if(2 == gesture_switch){
+		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
+			CTP_I2C_WRITE_byte_data(ts->client, 0xff, 0x0);
+			nvt_mode_change(0x81);
+			touch_disable(ts);
+			//synaptics_enable_interrupt_for_gesture(ts, 0);
+			//change slepp mode no need to write gesture mode.
+		}
+	}
+	mutex_unlock(&ts->mutex);
+	__pm_relax(&ts->source);
+
+	return count;
+}
+
+// chenggang.li@BSP.TP modified for oem 2014-08-08 create node
+/******************************start****************************/
+static const struct file_operations nvt_gesture_proc_fops = {
+	.write = nvt_gesture_write_func,
+	.read =  nvt_gesture_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
+static const struct file_operations nvt_gesture_switch_proc_fops = {
+	.write = nvt_gesture_switch_write_func,
+	.read =  nvt_gesture_switch_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
+static const struct file_operations nvt_coordinate_proc_fops = {
+	.read =  nvt_coordinate_proc_read_func,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
+
+
+static int init_nvt_proc(void)
+{
+	int ret = 0;
+	struct proc_dir_entry *prEntry_tmp  = NULL;
+	prEntry_tp = proc_mkdir("touchpanel", NULL);
+	if( prEntry_tp == NULL ){
+		ret = -ENOMEM;
+		TPD_ERR("Couldn't create touchpanel\n");
+	}
+
+
+	prEntry_tmp = proc_create( "gesture_enable", 0666, prEntry_tp, &nvt_gesture_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+        TPD_ERR("Couldn't create gesture_enable\n");
+	}
+	prEntry_tmp = proc_create( "gesture_switch", 0666, prEntry_tp, &nvt_gesture_switch_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+		TPD_ERR("Couldn't create gesture_switch\n");
+	}
+	prEntry_tmp = proc_create("coordinate", 0444, prEntry_tp, &nvt_coordinate_proc_fops);
+	if(prEntry_tmp == NULL){
+		ret = -ENOMEM;
+        TPD_ERR("Couldn't create coordinate\n");
+	}
+
+}
 /*******************************************************
 Description:
 	Novatek touchscreen driver probe function.
