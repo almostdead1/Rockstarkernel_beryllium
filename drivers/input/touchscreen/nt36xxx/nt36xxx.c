@@ -1740,6 +1740,48 @@ static struct nvt_ts_data *ts_g = NULL;
 
 static struct proc_dir_entry *prEntry_tp = NULL;
 
+static int nvt_ts_suspend(struct device *dev);
+
+static int CTP_I2C_READ_byte(struct i2c_client* client,
+		unsigned char addr);
+
+static int CTP_I2C_WRITE_byte(struct i2c_client* client,
+		unsigned char addr,unsigned char data);
+
+static int CTP_I2C_READ_word(struct i2c_client* client,
+		unsigned char addr);
+
+static int CTP_I2C_WRITE_word(struct i2c_client* client,
+		unsigned char addr,unsigned short data);
+static int nvt_mode_change(int mode);
+
+
+static void touch_enable (struct nvt_ts_data *ts)
+{
+    spin_lock(&ts->lock);
+    if(0 == atomic_read(&ts->irq_enable))
+    {
+        if(ts->irq)
+            enable_irq(ts->irq);
+        atomic_set(&ts->irq_enable,1);
+        //TPD_ERR("test %%%% enable irq\n");
+    }
+    spin_unlock(&ts->lock);
+}
+
+static void touch_disable(struct nvt_ts_data *ts)
+{
+    spin_lock(&ts->lock);
+    if(1 == atomic_read(&ts->irq_enable))
+    {
+        if(ts->irq)
+            disable_irq_nosync(ts->irq);
+        atomic_set(&ts->irq_enable,0);
+        //TPD_ERR("test ****************** disable irq\n");
+    }
+    spin_unlock(&ts->lock);
+}
+
 
 static ssize_t nvt_gesture_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
 {

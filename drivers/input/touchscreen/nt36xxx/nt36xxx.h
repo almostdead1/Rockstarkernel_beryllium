@@ -164,6 +164,11 @@ struct nvt_ts_data {
 	struct wakeup_source	source;
 	struct mutex mutex;
 	struct mutex mutexreport;
+	int irq;
+	int irq_gpio;
+	atomic_t irq_enable;
+    atomic_t is_stop;
+    spinlock_t lock;
 };
 
 #if WAKEUP_GESTURE
