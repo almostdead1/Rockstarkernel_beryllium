@@ -1759,7 +1759,7 @@ static int nvt_mode_change(int mode);
 
 static void touch_enable (struct nvt_ts_data *ts)
 {
-    spin_lock(&ts->lock);
+    mutex_lock(&ts->lock);
     if(0 == atomic_read(&ts->irq_enable))
     {
         if(ts->irq)
@@ -1767,12 +1767,12 @@ static void touch_enable (struct nvt_ts_data *ts)
         atomic_set(&ts->irq_enable,1);
         //TPD_ERR("test %%%% enable irq\n");
     }
-    spin_unlock(&ts->lock);
+    mutex_unlock(&ts->lock);
 }
 
 static void touch_disable(struct nvt_ts_data *ts)
 {
-    spin_lock(&ts->lock);
+    mutex_lock(&ts->lock);
     if(1 == atomic_read(&ts->irq_enable))
     {
         if(ts->irq)
@@ -1780,7 +1780,7 @@ static void touch_disable(struct nvt_ts_data *ts)
         atomic_set(&ts->irq_enable,0);
         //TPD_ERR("test ****************** disable irq\n");
     }
-    spin_unlock(&ts->lock);
+    mutex_unlock(&ts->lock);
 }
 
 
