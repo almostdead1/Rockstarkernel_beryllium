@@ -1713,10 +1713,16 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 }
 
 
+#define PAGESIZE 512
+
 #define TPD_DEVICE "novatek,nvt,Nvt-ts"
 
+	int gesture_enable;
+	int is_suspended;
 
 #define DouTap              1   // double tap
+#define BIT7 (0x1 << 7)
+
 int DouTap_gesture = 1; //"double tap"
 
 int Enable_gesture =1;
@@ -1781,20 +1787,6 @@ static ssize_t nvt_gesture_write_func(struct file *file, const char __user *buff
 	}
     //ruanbanmao@BSP add for tp gesture 2015-05-06, end
 	return count;
-}
-static ssize_t nvt_coordinate_proc_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
-{
-	int ret = 0;
-	char page[PAGESIZE];
-	TPD_ERR("%s:gesture_upload = %d \n", __func__, gesture);
-	ret = sprintf(page, "%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d\n",
-		gesture, Point_start.x, Point_start.y, Point_end.x, Point_end.y,
-		Point_1st.x, Point_1st.y, Point_2nd.x, Point_2nd.y,
-		Point_3rd.x, Point_3rd.y, Point_4th.x, Point_4th.y,
-		clockwise);
-
-	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
-	return ret;
 }
 
 static ssize_t nvt_gesture_switch_read_func(struct file *file, char __user *user_buf, size_t count, loff_t *ppos)
@@ -1867,12 +1859,6 @@ static const struct file_operations nvt_gesture_switch_proc_fops = {
 	.owner = THIS_MODULE,
 };
 
-static const struct file_operations nvt_coordinate_proc_fops = {
-	.read =  nvt_coordinate_proc_read_func,
-	.open = simple_open,
-	.owner = THIS_MODULE,
-};
-
 
 
 static int init_nvt_proc(void)
@@ -1895,11 +1881,6 @@ static int init_nvt_proc(void)
 	if(prEntry_tmp == NULL){
 		ret = -ENOMEM;
 		TPD_ERR("Couldn't create gesture_switch\n");
-	}
-	prEntry_tmp = proc_create("coordinate", 0444, prEntry_tp, &nvt_coordinate_proc_fops);
-	if(prEntry_tmp == NULL){
-		ret = -ENOMEM;
-        TPD_ERR("Couldn't create coordinate\n");
 	}
 
 }
