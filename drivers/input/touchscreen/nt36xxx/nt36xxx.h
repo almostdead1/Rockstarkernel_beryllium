@@ -144,7 +144,7 @@ struct nvt_ts_data {
 	uint32_t irq_flags;
 	int32_t reset_gpio;
 	uint32_t reset_flags;
-	struct mutex lock;
+//	struct mutex lock;
 	const struct nvt_ts_mem_map *mmap;
 	uint8_t carrier_system;
 	uint16_t nvt_pid;
@@ -165,7 +165,6 @@ struct nvt_ts_data {
 	struct mutex mutex;
 	struct mutex mutexreport;
 	int irq;
-	int irq_gpio;
 	atomic_t irq_enable;
     atomic_t is_stop;
     spinlock_t lock;

@@ -1735,6 +1735,7 @@ static int gesture_switch = 1;
 		pr_err(TPD_DEVICE ": " a,##arg);\
 	}while(0)
 
+unsigned int tp_debug;
 
 static struct nvt_ts_data *ts_g = NULL;
 
@@ -1862,7 +1863,7 @@ static ssize_t nvt_gesture_switch_write_func(struct file *file, const char __use
 	TPD_ERR("gesture_switch:%d,suspend:%d,gesture:%d\n",gesture_switch,ts->is_suspended,ts->gesture_enable);
 	if (1 == gesture_switch){
 		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
-			CTP_I2C_WRITE_byte_data(ts->client, 0xff, 0x0);
+			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
 			nvt_mode_change(0x80);
 			//synaptics_enable_interrupt_for_gesture(ts, 1);
 			//change active mode no need to write gesture mode.
@@ -1870,7 +1871,7 @@ static ssize_t nvt_gesture_switch_write_func(struct file *file, const char __use
 		}
 	}else if(2 == gesture_switch){
 		if ((ts->is_suspended == 1) && (ts->gesture_enable == 1)){
-			CTP_I2C_WRITE_byte_data(ts->client, 0xff, 0x0);
+			i2c_smbus_write_byte_data(ts->client, 0xff, 0x0);
 			nvt_mode_change(0x81);
 			touch_disable(ts);
 			//synaptics_enable_interrupt_for_gesture(ts, 0);
