@@ -1717,8 +1717,6 @@ static ssize_t novatek_input_symlink(struct nvt_ts_data *ts) {
 
 #define TPD_DEVICE "novatek,nvt,Nvt-ts"
 
-	int gesture_enable;
-	int is_suspended;
 
 #define DouTap              1   // double tap
 #define BIT7 (0x1 << 7)

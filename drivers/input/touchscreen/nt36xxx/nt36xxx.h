@@ -158,6 +158,12 @@ struct nvt_ts_data {
 #endif
 	int current_index;
 	struct pm_qos_request pm_qos_req;
+	int gesture_enable;
+	int is_suspended;
+	bool loading_fw;
+	struct wakeup_source	source;
+	struct mutex mutex;
+	struct mutex mutexreport;
 };
 
 #if WAKEUP_GESTURE
