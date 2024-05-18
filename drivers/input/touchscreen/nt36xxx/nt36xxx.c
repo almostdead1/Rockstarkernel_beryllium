@@ -1902,8 +1902,7 @@ static const struct file_operations nvt_gesture_switch_proc_fops = {
 
 
 
-static int init_nvt_proc(void)
-{
+static ssize_t novatek_input_proc(struct nvt_ts_data *ts) {
 	int ret = 0;
 	struct proc_dir_entry *prEntry_tmp  = NULL;
 	prEntry_tp = proc_mkdir("touchpanel", NULL);
